@@ -25,6 +25,10 @@ app = Flask(__name__)
 configuration = Configuration(access_token=os.getenv('CHANNEL_ACCESS_TOKEN'))
 line_handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 
+@app.route("/")
+def home():
+    return "<h1>Welcome to the LINE Bot Server</h1>"
+
 
 @app.route("/callback", methods=['POST'])
 def callback():
