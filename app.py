@@ -52,8 +52,7 @@ def callback():
 
 @app.route("/esp32", methods=['POST'])
 def esp32():
-    #group_id = os.getenv('GROUP_ID')
-    group_id = None
+    group_id = os.getenv('GROUP_ID')
     data = request.get_json()
     message_text = data.get('message', 'Current Route: /ESP32!')
 
