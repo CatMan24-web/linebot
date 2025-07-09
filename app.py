@@ -18,6 +18,7 @@ from linebot.v3.webhooks import (
     MessageEvent,
     TextMessageContent
 )
+
 import os
 
 app = Flask(__name__)
@@ -25,9 +26,10 @@ app = Flask(__name__)
 configuration = Configuration(access_token=os.getenv('CHANNEL_ACCESS_TOKEN'))
 line_handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 
+
 @app.route("/")
 def home():
-    return "<h1>Welcome to the LINE Bot Server</h1>"
+    return "<h1>Welcome to the LINE Bot Server!</h1>"
 
 
 @app.route("/callback", methods=['POST'])
@@ -50,35 +52,56 @@ def callback():
 
 @app.route("/esp32", methods=['POST'])
 def esp32():
+    #group_id = os.getenv('GROUP_ID')
+    group_id = None
     data = request.get_json()
-    message = data.get('message', 'Server connected successfully!')
-
-    # set LINE userId
-    user_id = os.getenv('USERS_ID')
+    message_text = data.get('message', 'Current Route: /ESP32!')
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
-        line_bot_api.push_message_with_http_info(
-            PushMessageRequest(
-                to=user_id,
-                messages=[TextMessage(text=message)]
+
+        try:
+            # Send a push message to the target group
+            line_bot_api.push_message_with_http_info(
+                PushMessageRequest(
+                    to=group_id,
+                    messages=[TextMessage(text=message_text)]
+                )
             )
-        )
+        except Exception as e:
+            app.logger.error(f"An error occurred: {e}")
+            return 'Failed to send message.', 500
 
     return 'OK'
 
 
 @line_handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
-    print("user_id:", event.source.user_id)
-    with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.reply_message_with_http_info(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text=event.message.text)]
-            )
-        )
+    global TARGET_GROUP_ID
+    
+    # check if the event is from a group
+    if event.source.type == 'group':
+        
+        # check if the message is the bind command
+        if event.message.text == '!bind':
+
+            # get group_id from the event and save it
+            TARGET_GROUP_ID = event.source.group_id
+            print(f"Group ID captured: {TARGET_GROUP_ID}")
+            app.logger.info(f"Group ID captured: {TARGET_GROUP_ID}")
+
+            # reply with a message to inform the user that the binding was successful
+            reply_text = f"✅ Successfully retrieved the group ID: {TARGET_GROUP_ID}!"
+            with ApiClient(configuration) as api_client:
+                line_bot_api = MessagingApi(api_client)
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=reply_text)]
+                    )
+                )
+            return
+
 
 if __name__ == "__main__":
     app.run()
