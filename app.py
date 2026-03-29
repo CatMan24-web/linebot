@@ -90,7 +90,7 @@ def handle_message(event):
             app.logger.info(f"Group ID captured: {TARGET_GROUP_ID}")
 
             # reply with a message to inform the user that the binding was successful
-            reply_text = f"✅ Successfully retrieved the group ID: {TARGET_GROUP_ID}!"
+            reply_text = f"✅ Successfully retrieved the group ID: {TARGET_GROUP_ID}"
             with ApiClient(configuration) as api_client:
                 line_bot_api = MessagingApi(api_client)
                 line_bot_api.reply_message(
